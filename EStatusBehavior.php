@@ -19,10 +19,18 @@ class EStatusBehavior extends CActiveRecordBehavior
 	 * Default draft, published, archived
 	 * @see setStatuses
 	 */
-	public $statuses = array('draft', 'published', 'archived');
+	public $statuses;
 
-	protected $_status = NULL;
-	protected $_statusText = 'unknown';
+	protected $_status;
+	protected $_statusText;
+	
+	public function afterConstruct()
+	{		
+		if(empty($this->statuses))
+		    $this->statuses = array(Yii::t('statusbehavior','draft'),Yii::t('statusbehavior','published'),Yii::t('statusbehavior','archived'));
+		
+		$this->_statusText = Yii::t('statusbehavior','draft');
+	}
 	
 	/**
 	 * Check required properties and attaches the behavior object to the component.
@@ -33,7 +41,7 @@ class EStatusBehavior extends CActiveRecordBehavior
 	{
 		// Check required var statusField.
 		if (!is_string($this->statusField) || empty($this->statusField))
-			throw new CException(self::t('yii', 'Property "{class}.{property}" is not defined.',
+			throw new CException(Yii::t('statusbehavior', 'Property "{class}.{property}" is not defined.',
 				array('{class}' => get_class($this), '{property}' => 'statusField')));
 
 		parent::attach($owner);
@@ -53,10 +61,19 @@ class EStatusBehavior extends CActiveRecordBehavior
 	 */
 	public function setStatuses($statuses)
 	{
-		$this->statuses = is_array($statuses) && !empty($statuses) ? $statuses : array('draft', 'published', 'archived');
+		$this->statuses = is_array($statuses) && !empty($statuses) ? $statuses : $this->statuses;
 
 		return $this->getOwner();
 	}
+    
+	/**	 	 
+	 * @return array list of statuses (use insted $model->statuses->statuses)
+	 */
+	public function getStatuses()
+	{
+		return $this->statuses;
+	}
+	
 	/**
 	 * @return string status value.
 	 */
@@ -82,7 +99,7 @@ class EStatusBehavior extends CActiveRecordBehavior
 		if (isset($this->statuses[$status]))
 			$this->_status = $status;
 		else if (($this->_status = array_search($status, $this->statuses)) === FALSE)
-			throw new CException(Yii::t('yiiext', 'Status "{status}" is not allowed.', array('{status}' => $status)));
+			throw new CException(Yii::t('statusbehavior', 'Status "{status}" is not allowed.', array('{status}' => $status)));
 
 		$this->_statusText = $this->statuses[$this->_status];
 		$this->getOwner()->setAttribute($this->statusField, $this->_status);
@@ -104,7 +121,7 @@ class EStatusBehavior extends CActiveRecordBehavior
 	public function afterFind($event)
 	{
 		$this->_status = $this->getOwner()->getAttribute($this->statusField);
-		$this->_statusText = isset($this->statuses[$this->_status]) ? $this->statuses[$this->_status] : 'unknown';
+		$this->_statusText = isset($this->statuses[$this->_status]) ? $this->statuses[$this->_status] : Yii::t('statusbehavior','unknow');
 
 		parent::afterFind($event);
 	}
